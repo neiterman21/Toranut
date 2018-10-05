@@ -21,6 +21,7 @@ def parsArgs():
     parser.add_argument("--email", help="users google acount mail", action="store")
     parser.add_argument("--שם", help="users name as shown in exle file", action="store")
     parser.add_argument("--xls", help="xls toranut fike", action="store")
+    parser.add_argument("--dates", nargs='+' , help="days of toranut", action="store") 
     args = parser.parse_args()
     return args
 
@@ -47,17 +48,17 @@ def Main():
     global service
     args = parsArgs()
     setup_calendar()
-    toranuyot = pars_xls(args.xls)
+#    toranuyot = pars_xls(args.xls)
 
     myevent = {
     'summary': 'תורנות',
     'location': 'הילל יפה',
     'description': 'הזדמנות לא לישון מחוץ לבית',
     'start': {
-        'date': '2018-06-22'
+        'date': '2018-10-22'
     },
     'end': {
-        'date': '2018-06-22'
+        'date': '2018-10-22'
     },
     'recurrence': [
         'RRULE:FREQ=DAILY;COUNT=1'
@@ -68,7 +69,12 @@ def Main():
         'overrides': [],
     },
     }
-    service.events().insert(calendarId=args.email , body = myevent).execute()
+    date = '2018-10-%s'
+    for day in args.dates :
+        myevent['start']['date'] = (date % day)
+        myevent['end']['date']   = (date % day)
+        print (myevent['start']['date'])
+        service.events().insert(calendarId=args.email , body = myevent).execute()
     '''
     for day in toranuyot:
         if args.name in day['toranim']:
