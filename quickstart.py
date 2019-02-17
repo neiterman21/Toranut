@@ -11,18 +11,18 @@ from oauth2client import file, client, tools
 import datetime
 import sys 
 import argparse
-#reload(sys)
+
 #sys.setdefaultencoding('utf-8')
-#hello this is a
-#this is demo branch
+from openpyxl import load_workbook
+from openpyxl import Workbook
+
 
 def parsArgs():
-    print ("i am here")
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", help="users google acount mail", action="store")
-    parser.add_argument("--שם", help="users name as shown in exle file", action="store")
+    parser.add_argument("--name", help="users name as shown in exle file", action="store")
     parser.add_argument("--xls", help="xls toranut fike", action="store")
-    parser.add_argument("--dates", nargs='+' , help="days of toranut", action="store") 
+    #parser.add_argument("--dates", nargs='+' , help="days of toranut", action="store")
     args = parser.parse_args()
     return args
 
@@ -44,13 +44,34 @@ def setup_calendar():
 def pars_xls(xls_file):
     return 0
 
+def pars_dates(dates):
+    ret_dates = []
+    for date in dates:
+        if (isinstance(date, datetime.datetime)):
+            #the mox betwing day and mounth is due to date missuse in the xls file. NOT A BUG
+            ret_dates.append(str(date.month)  + "/" + str(date.day) + "/" + str(date.year)[-2:])
+
+        if (isinstance(date, unicode)):
+            ret_dates.append(date.encode('utf8'))
+    return ret_dates
+
+def toranut_dates(name , xls_string):
+    wb = load_workbook(xls_string)
+    ws = wb.active
+    dates = []
+    for x in range(2,33):
+        if name == ws.cell(row=x, column=4).value or name == ws.cell(row=x, column=5).value or name == ws.cell(row=x, column=6).value or name == ws.cell(row=x, column=7).value:
+            dates.append(ws.cell(row=x, column=3).value)
+    return pars_dates(dates)
+
+
 # Call the Calendar API
 def Main():
     global service
     args = parsArgs()
     setup_calendar()
 #    toranuyot = pars_xls(args.xls)
-
+    colors = service.colors().get().execute()
     myevent = {
     'summary': 'תורנות',
     'location': 'הילל יפה',
@@ -65,15 +86,18 @@ def Main():
         'RRULE:FREQ=DAILY;COUNT=1'
     ],
     'attendees': [],
+    'colorId' : "11",
     'reminders': {
         'useDefault': False,
         'overrides': [],
     },
     }
-    date = '2018-10-%s'
-    for day in args.dates :
-        myevent['start']['date'] = (date % day)
-        myevent['end']['date']   = (date % day)
+    date = '%s-%s-%s'
+    dates = toranut_dates(unicode(args.name, 'utf8') , args.xls)
+    for day in dates :
+        split_day = day.split('/')
+        myevent['start']['date'] = ( "20" + split_day[2] + "-" + split_day[1] + "-" + split_day[0])
+        myevent['end']['date']   = myevent['start']['date']
         print (myevent['start']['date'])
         service.events().insert(calendarId=args.email , body = myevent).execute()
     '''
